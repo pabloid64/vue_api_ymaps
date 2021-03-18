@@ -17,17 +17,18 @@
       hint-content="В пути" 
     />
     <button @click = 'pauseIs = !pauseIs' ></button>
+    <div>{{speed}} км/ч</div>
   </yandex-map>
   </div>
 </template>
 
 <script>
-
-// import { yandexMap, ymapMarker } from 'vue-yandex-maps'
 import YmapPlugin from 'vue-yandex-maps'
 import Vue from 'vue'
 import Sugar from 'sugar'
+import { JSONDATA } from './config/json'
 
+Vue.use(YmapPlugin, settings)
 
 const settings = {
   apiKey: 'cd05a073-1550-4514-bca2-8c2a353608af',
@@ -35,25 +36,19 @@ const settings = {
   coordorder: 'latlong'
 }
 
-Vue.use(YmapPlugin, settings)
+let myInterval;
 
-import { JSONDATA } from './config/json'
-
-export default {
-  
+export default { 
   name: 'App',
   data: () => ({
     properties: {
       distance: {},
       duration: {}
     },
+    speed: 0,
     pauseIs: true,
-    selectCoord: 1,
-    currentTime: 0,  
-    dateStart: "2019-06-28T07:33:03",
-    dateEnd: "2019-06-28T07:34:04",
+    selectCoord: 1,  
     dateTime: [],
-    jsonData: [],
     startcoord: [
       55.651365, 37.610225
     ],
@@ -64,25 +59,36 @@ export default {
     ]
   }),
   created(){
-   this.jsonData = JSONDATA;
-    for(let i=0; i < this.jsonData.length; i++){
-      this.coords[i] = [this.jsonData[i][2],this.jsonData[i][1]];
-      this.dateTime.push(Math.floor((Date.create(this.jsonData[i][0]).getTime() - Date.create(this.dateStart).getTime())/(1000)))
+    for(let i=0; i < JSONDATA.length; i++){
+      this.coords[i] = [JSONDATA[i][2],JSONDATA[i][1]];
+      this.dateTime.push(Math.floor((Date.create(JSONDATA[i][0]).getTime() - Date.create(JSONDATA[0][0]).getTime())/(1000)))
     }
-
-    setInterval(this.changePlaceMarker, (this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1])*1000);
+   myInterval = setInterval(this.changePlaceMarker, (this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1])*1000);
   },
   methods: {
     changePlaceMarker(){
-      console.log(this.dateTime[this.selectCoord - 1]);
-      console.log(this.dateTime[this.selectCoord]);
-      console.log(this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1]);
-      console.log('Работает!');
       if(this.pauseIs) {
+          this.setSpeed(this.coords[this.selectCoord - 1], this.coords[this.selectCoord], this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1])
           this.markercoord = this.coords[this.selectCoord];
           this.selectCoord = this.selectCoord + 1;
-          console.log('Работает2!');
+          clearInterval(myInterval);
+          myInterval = setInterval(this.changePlaceMarker, (this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1])*1000);
       }
+    },
+    setSpeed(oldVal, newVal, time){
+      var R = 6371; // Radius of the earth in km
+      var dLat = this.deg2rad(newVal[0]-oldVal[0]);  // deg2rad below
+      var dLon = this.deg2rad(newVal[1]-oldVal[1]); 
+      var a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(this.deg2rad(oldVal[0])) * Math.cos(this.deg2rad(newVal[0])) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2); 
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      var d = R * c; // Distance in km
+      this.speed = Math.floor(d/(time/3600));
+    },
+    deg2rad(deg) {
+    return deg * (Math.PI/180)
     }
   }
 }
@@ -98,7 +104,6 @@ export default {
   height: 90%;
 }
 button {
-  position: absolute;
   font-weight: 700;
   color: white;
   text-decoration: none;
