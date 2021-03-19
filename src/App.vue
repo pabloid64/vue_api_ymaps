@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <yandex-map 
-    :coords="startcoord"
+    :coords="startCoord"
     :zoom="12" 
     :use-object-manager="true"
   >
@@ -9,14 +9,13 @@
       :coords="coords" 
       marker-id="1"
       marker-type="Polyline"
-      :properties="properties" 
     />
     <ymap-marker 
-      :coords="markercoord" 
+      :coords="markerCoord" 
       marker-id="2" 
       hint-content="В пути" 
     />
-    <button @click = 'pauseIs = !pauseIs' ></button>
+    <button @click = 'pauseIs = !pauseIs' type="button" class="el-button  el-circle">{{pauseIs ? "Pause" : "Play"}}</button>
     <div>{{speed}} км/ч</div>
   </yandex-map>
   </div>
@@ -41,18 +40,14 @@ let myInterval;
 export default { 
   name: 'App',
   data: () => ({
-    properties: {
-      distance: {},
-      duration: {}
-    },
     speed: 0,
     pauseIs: true,
     selectCoord: 1,  
     dateTime: [],
-    startcoord: [
+    startCoord: [
       55.651365, 37.610225
     ],
-    markercoord: [
+    markerCoord: [
       55.651365, 37.610225
     ],
     coords: [
@@ -65,31 +60,36 @@ export default {
     }
    myInterval = setInterval(this.changePlaceMarker, (this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1])*1000);
   },
+  computed: {
+
+  },
   methods: {
     changePlaceMarker(){
       if(this.pauseIs) {
           this.setSpeed(this.coords[this.selectCoord - 1], this.coords[this.selectCoord], this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1])
-          this.markercoord = this.coords[this.selectCoord];
+          this.markerCoord = this.coords[this.selectCoord];
           this.selectCoord = this.selectCoord + 1;
           clearInterval(myInterval);
           myInterval = setInterval(this.changePlaceMarker, (this.dateTime[this.selectCoord] - this.dateTime[this.selectCoord - 1])*1000);
       }
     },
     setSpeed(oldVal, newVal, time){
-      var R = 6371; // Radius of the earth in km
-      var dLat = this.deg2rad(newVal[0]-oldVal[0]);  // deg2rad below
-      var dLon = this.deg2rad(newVal[1]-oldVal[1]); 
-      var a = 
+      const radius = 6371; // formula 
+      let dLat = this.deg2rad(newVal[0] - oldVal[0]);
+      let dLon = this.deg2rad(newVal[1] - oldVal[1]); 
+      const a = 
       Math.sin(dLat/2) * Math.sin(dLat/2) +
       Math.cos(this.deg2rad(oldVal[0])) * Math.cos(this.deg2rad(newVal[0])) * 
       Math.sin(dLon/2) * Math.sin(dLon/2); 
-      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-      var d = R * c; // Distance in km
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      const d = radius * c; 
+      
       this.speed = Math.floor(d/(time/3600));
     },
     deg2rad(deg) {
-    return deg * (Math.PI/180)
-    }
+      return deg * (Math.PI/180);
+    },
+
   }
 }
 </script>
